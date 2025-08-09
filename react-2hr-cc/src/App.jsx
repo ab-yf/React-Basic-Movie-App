@@ -6,7 +6,7 @@ import MovieCard from "./components/MovieCard.jsx";
 // `useDebounce` is a custom hook from the 'react-use' library to delay function execution.
 import { useDebounce } from "react-use";
 // This function connects our app to the Appwrite backend to track search terms.
-import { updateSearchCount } from "./appwrite.js";
+import { getTrendingMovies, updateSearchCount } from "./appwrite.js";
 
 // --- API Configuration ---
 // The base URL for all The Movie Database (TMDb) API requests.
@@ -30,6 +30,8 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState("");
   // `movieList` stores the array of movie objects fetched from the API.
   const [movieList, setMovieList] = useState([]);
+  // `trendingMovies` stores the array of trending movie objects fetched from Appwrite.
+  const [trendingMovies, setTrendingMovies] = useState([]);
   // `isLoading` is a boolean flag to track when an API call is in progress.
   const [isLoading, setIsLoading] = useState(false);
   // `debouncedSearchTerm` stores the search term after a delay, preventing API calls on every keystroke.
@@ -93,6 +95,16 @@ const App = () => {
     }
   };
 
+  // Async function to load trending movies from our Appwrite backend.
+  const loadTrendingMovies = async () => {
+    try {
+      const movies = await getTrendingMovies();
+      setTrendingMovies(movies);
+    } catch (error) {
+      console.log(`Error Loading Trending Movies: ${error}`);
+    }
+  };
+
   // --- Effects ---
   // The `useEffect` hook runs side effects in functional components.
   // This one runs the `fetchMovies` function whenever `debouncedSearchTerm` changes.
@@ -100,6 +112,11 @@ const App = () => {
   useEffect(() => {
     fetchMovies(debouncedSearchTerm);
   }, [debouncedSearchTerm]);
+
+  // This one runs the `loadTrendingMovies` function.
+  useEffect(() => {
+    loadTrendingMovies();
+  }, []);
 
   // --- JSX Rendering ---
   // This is what the component will render to the DOM.
@@ -116,8 +133,23 @@ const App = () => {
           {/* The Search component is rendered here, passing down the current search term and the function to update it. */}
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
+
+        {trendingMovies.length > 0 && (
+          <section className="trending">
+            <h2>Trending Movie</h2>
+
+            <ul>
+              {trendingMovies.map((movie, index) => (
+                <li key={movie.$id}>
+                  <p>{index + 1}</p>
+                  <img src={movie.poster_url} alt={movie.title} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <section className="all-movies">
-          <h2 className="mt-[40px]">All Movies</h2>
+          <h2>All Movies</h2>
           {/* Conditional rendering logic for the movie list area. */}
           {isLoading ? (
             // If `isLoading` is true, show the Spinner component.

@@ -42,7 +42,7 @@ export const updateSearchCount = async (searchTerm, movie) => {
         // An array of queries to filter the results.
         // Here, we only want documents where the 'searchTerm' attribute exactly matches the user's query.
         Query.equal("searchTerm", searchTerm),
-      ]
+      ],
     );
 
     // --- Step 2: Decide whether to update an existing document or create a new one. ---
@@ -59,7 +59,7 @@ export const updateSearchCount = async (searchTerm, movie) => {
         {
           // The data to update. We increment the 'count' by 1.
           count: doc.count + 1,
-        }
+        },
       );
     } else {
       // --- Step 2b: Create a new document. ---
@@ -69,12 +69,26 @@ export const updateSearchCount = async (searchTerm, movie) => {
         searchTerm,
         count: 1,
         movie_id: movie.id,
-        poster_url: movie.poster_path ? `${TMDB_IMAGE_BASE_URL}/${movie.poster_path}` : null,
+        poster_url: movie.poster_path
+          ? `${TMDB_IMAGE_BASE_URL}/${movie.poster_path}`
+          : null,
       });
     }
   } catch (error) {
     // If any part of the `try` block fails, the error is caught here.
     // We log the error to the console for debugging purposes.
+    console.error("Appwrite Error:", error);
+  }
+};
+
+export const getTrendingMovies = async () => {
+  try {
+    const result = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
+      Query.limit(5),
+      Query.orderDesc("count"),
+    ]);
+    return result.documents;
+  } catch (error) {
     console.error("Appwrite Error:", error);
   }
 };
